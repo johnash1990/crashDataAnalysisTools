@@ -78,6 +78,39 @@
 	- dir_grad (binary/boolean): direction of grade (i.e., + or -)
 	- pct_grad (float): percentage grade of segment
 	- begmp (float): beginning milepost of vertical curve
+    
+## WA weather Data (total size: ~1 MB)
+- **Files:** 
+	- weather_06.txt (size: 0.03 MB, dimension: 365 x 23)
+	- weather_07.txt (size: 0.03 MB, dimension: 365 x 23)
+	- weather_08.txt (size: 0.03 MB, dimension: 365 x 23)
+	- weather_09.txt (size: 0.03 MB, dimension: 365 x 23)
+	- weather_10.txt (size: 0.03 MB, dimension: 365 x 23)
+	- weather_11.txt (size: 0.03 MB, dimension: 365 x 23)
+- **Columns:**
+	- PST: date
+    - Max TemperatureF
+    - Mean TemperatureF
+    - Min TemperatureF
+    - Max Dew PointF
+    - Mean Dew PointF
+    - Min DewpointF
+    - Max Humidity
+    - Mean Humidity
+    - Min Humidity
+    - Max Sea Level PressureIn
+    - Mean Sea Level PressureIn
+    - Min Sea Level PressureIn
+    - Max VisibilityMiles
+    - Mean VisibilityMiles
+    - Min VisibilityMiles
+    - Max Wind SpeedMPH
+    - Mean Wind SpeedMPH
+    - Max Gust SpeedMPH
+    - PrecipitationIn
+    - CloudCover
+    - Events: rain, fog, etc.
+    - WindDirDegrees
 
 ### Question about unit tests: 
 Is it possible to create a subset of the data for unit test purposes?
