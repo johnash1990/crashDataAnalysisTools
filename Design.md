@@ -7,4 +7,4 @@ The motivation of the research is to understand how on-road crash is related to 
 ### Tasks
 
 ### Use Cases
-- Draw a scatterplot of crash rate vs. speed.
+- Draw a scatterplot of crash rate vs. factors such as speed, temperature, precipitation, etc.
