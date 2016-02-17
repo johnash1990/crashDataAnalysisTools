@@ -78,7 +78,21 @@
 	- dir_grad (binary/boolean): direction of grade (i.e., + or -)
 	- pct_grad (float): percentage grade of segment
 	- begmp (float): beginning milepost of vertical curve
-    
+
+## Freeway Elevation Data (WA) (total size: 67.72 MB)
+- **Files:**
+	- WA.csv (size: 67.72 MB, dimension: 926752 x 8)
+
+- **Columns:**
+	- State: US Postal Service abbreviated state name
+	- Route_Name: Interstate name in the form of “I-” followed by a number of up to three digits. For example, Interstate 95 is coded as “I-95”
+	- Route_ID: This field is inherited from the FHWA ARNOLD GIS Maps
+	- Direction: Direction of the interstate, with “N”, “S”, “E”, and “W” representing North, South, East, and West, respectively. For states not having bi-directional interstate centerlines in the FHWA ARNOLD GIS Maps, “Single” is used as the direction
+	- Longitude: Geographic longitude (in degrees) for each point
+	- Latitude: Geographic latitude (in degrees) for each point
+	- Milepost: Interstate milepost information for each point (mi.).
+	- Elevation: Elevation readings are in feet. The NAD27 datum is referenced by Google Earth.
+
 ## WA weather Data (total size: ~1 MB)
 - **Files:** 
 	- weather_06.txt (size: 0.03 MB, dimension: 365 x 23)
