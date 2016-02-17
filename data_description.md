@@ -79,7 +79,10 @@
 	- pct_grad (float): percentage grade of segment
 	- begmp (float): beginning milepost of vertical curve
 
-## Freeway Elevation Data (WA) (total size: 67.72 MB)
+# Freeway Elevation Data
+The dataset is created by the Smart Transportation Applications & Research Laboratory (STAR Lab) at University of Washington. It contains an individual table for freeway elevation information (at 10 ft. intervals) in each state in the US. The elevation information is extracted from Google Earth elevation database. In the class project, only Washington State elevation data was used.
+
+## Washington State Freeway Elevation Data (total size: 67.72 MB)
 - **Files:**
 	- WA.csv (size: 67.72 MB, dimension: 926752 x 8)
 
@@ -92,6 +95,8 @@
 	- Latitude: Geographic latitude (in degrees) for each point
 	- Milepost: Interstate milepost information for each point (mi.).
 	- Elevation: Elevation readings are in feet. The NAD27 datum is referenced by Google Earth.
+
+# Weather Data
 
 ## WA weather Data (total size: ~1 MB)
 - **Files:** 
