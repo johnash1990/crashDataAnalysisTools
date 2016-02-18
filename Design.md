@@ -13,5 +13,6 @@ The objective of the research is to understand how on-road crash is related to d
 - Interpret the results with interactive plots and tables.
 - Identify the crash hotspots through methods from literature research.
 - Provide a tool to help people analyze different aspects of crash data.
+
 ### Use Cases
 - Draw a scatterplot of crash rate vs. factors such as speed, temperature, precipitation, etc.
