@@ -8,6 +8,7 @@ The objective of the research is to understand how on-road crash is related to d
 
 ### Tasks
 - Obtain crash data, road network data, elevation data and weather data and complie them together.
+- Apply statistical model package to the data to develop crash prediction models.
 
 ### Use Cases
 - Draw a scatterplot of crash rate vs. factors such as speed, temperature, precipitation, etc.
