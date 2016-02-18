@@ -7,8 +7,11 @@ A number of factors can contribute to the risk of vehicle crash, including vehic
 The objective of the research is to understand how on-road crash is related to different types of factors, including traffic flow parameters, roadway geometry, and weather conditions. In addressing the problem, three different data sources (HSIS, Freeway Elevation Dataset, Weather Data) are integrated containing those factors. Users can refer to the data description markdown file for more details about the datasets. Analysis of the datasets focusing on the several following tasks:
 
 ### Tasks
-- Obtain crash data, road network data, elevation data and weather data and complie them together.
-- Apply statistical model package to the data to develop crash prediction models.
-
+- Obtain crash data, road network data, elevation data and weather data and compile them together.
+- Investigate necessary packages to perform modeling and visualization tasks.
+- Apply statistical model package to the data to develop crash prediction models and crash serverity models.
+- Interpret the results with interactive plots and tables.
+- Identify the crash hotspots through methods from literature research.
+- Provide a tool to help people analyze different aspects of crash data.
 ### Use Cases
 - Draw a scatterplot of crash rate vs. factors such as speed, temperature, precipitation, etc.
