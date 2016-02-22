@@ -2,10 +2,11 @@
 
 ## Progress this period:
 - Developed several use cases.
-- Did some data cleaning and coming (still have some more work to do).
+- Did some data cleaning and combining (still have some more work to do).
 - Began experimenting and developing models with 'statsmodels' package.
 
 ## Deliverables for next period:
+- A combined dataset.
 - A technology review of 'statsmodels'.
 - Write three functions with documents.
 - Perform code reviews.
