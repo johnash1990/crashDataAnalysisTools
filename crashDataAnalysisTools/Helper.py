@@ -7,9 +7,9 @@ def PlotXVsY(df, colname_x, colname_y):
     """
     scatter plot of attribute x against y
     Parameters:
-    @df dataframe datasource
-    @colname_x, string, column name for attribute x
-    @colname_y, string, column name for attribute y
+    @df {dataframe} datasource
+    @colname_x {string} column name for attribute x
+    @colname_y {string} column name for attribute y
     Return:
     the produced figure
     """
@@ -25,9 +25,9 @@ def PlotModelCDF(rmodel, lowerb, upperb, modelname):
     plot of model CDF
     Parameters:
     @model a regression model, e.g. Logit model or Probit model
-    @lowerb, double, the lower bound of the dataset
-    @upperb, double, the upper bound of the dataset
-    @modelname, string, the name of the model, e.g. Probit or Logit
+    @lowerb {double} the lower bound of the dataset
+    @upperb {double} the upper bound of the dataset
+    @modelname {string} the name of the model, e.g. Probit or Logit
     Return:
     the produced figure
     """
@@ -44,7 +44,7 @@ def SaveToPDF(fig, filename):
     Save fig to PDF
     Parameters:
     @fig the figure to be saved
-    @filename, string, file name, without suffix
+    @filename {string} file name, without suffix
     Return:
     the file path
     """
@@ -59,7 +59,7 @@ def SaveToCSV(df, filename):
     Save a dataframe to a csv file
     Parameters:
     @df the dataframe to be saved
-    @filename, string, file name, without suffix
+    @filename {string} file name, without suffix
     Return:
     the file path
     """
