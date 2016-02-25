@@ -5,12 +5,14 @@ import sqlite3 as dbi
 
 def merge_crash_and_segment(crashes, roadSegments):
     '''
-    Inputs: - a csv file containing individual crash records for
+    Inputs: - string file name containing individual crash records for
             a given year, each of which has a milepost value and
             route number identifying where the crash took place
-            - a csv file defining homogeneous road segments on
+            - string file name defining homogeneous road segments on
             various routes in the state, each of which is defined
             by a route number and a start and end milepost value
+            -NOTE: file names should NOT contain .csv, but just list
+            the name of the file
     Output: a data frame with the number of crashes that occurred on
     each road segment
     - Computes the sum of crashes for the segments as defined based on
@@ -19,31 +21,31 @@ def merge_crash_and_segment(crashes, roadSegments):
     '''
 
     # construct the filepaths for the csv files
-    crashFilePath = os.getcwd() + '/' + crashes + '.csv'
-    roadSemgentsFilePath = os.getcwd() + '/' + roadSegments + '.csv'
+    crash_file_path = os.getcwd() + '/' + crashes + '.csv'
+    road_semgents_file_path = os.getcwd() + '/' + roadSegments + '.csv'
 
     # turn the csv files into pandas data frames
-    crashes = pd.read_csv(crashFilePath)
-    roadSeg = pd.read_csv(roadSemgentsFilePath)
+    crashes = pd.read_csv(crash_file_path)
+    road_seg = pd.read_csv(road_semgents_file_path)
 
     # create a db in sqlite3, establish a connection
     db = dbi.connect('crashCountDB')
 
     # get a cursor for sql queries
-    dbCur = db.cursor()
+    db_cur = db.cursor()
 
     # drop the tables if they already exist, assuming the function
     # has been called at least once, the tables will exist
-    dbCur.execute('DROP TABLE IF EXISTS Crashes')
-    dbCur.execute('DROP TABLE IF EXISTS RoadSegments')
+    db_cur.execute('DROP TABLE IF EXISTS Crashes')
+    db_cur.execute('DROP TABLE IF EXISTS RoadSegments')
 
     # convert the dataframes to sql tables
     crashes.to_sql(name='Crashes', con=db)
-    roadSeg.to_sql(name='RoadSegments', con=db)
+    road_seg.to_sql(name='RoadSegments', con=db)
 
     # query to join count total number of crashes occuring on
     # each road segment based on route number and milepost
-    qryGetCrashCount = '''
+    qry_get_crash_count = '''
         SELECT RoadSegments.begmp, RoadSegments.endmp, RoadSegments.road_inv,
         COUNT(Crashes.caseno) as CrashCount
         FROM Crashes, RoadSegments
@@ -54,15 +56,16 @@ def merge_crash_and_segment(crashes, roadSegments):
         '''
 
     # create a data frane with the crash counts by segment
-    segmentCrashCount = pd.read_sql(qryGetCrashCount, con=db)
+    segment_crash_count = pd.read_sql(qry_get_crash_count, con=db)
 
     # merge the crash counts into the road segment data frame
-    roadSegmentsAndCrashCounts = pd.merge(roadSeg,
-                                          segmentCrashCount, how='left',
-                                          on=['road_inv', 'begmp', 'endmp'])
+    road_segments_and_crash_counts = pd.merge(roa_seg, segment_crash_count,
+                                              how='left', on=['road_inv',
+                                                              'begmp',
+                                                              'endmp'])
 
     # convert the NaN's to 0's
-    roadSegmentsAndCrashCounts['CrashCount'].fillna(0, inplace=True)
+    road_segments_and_crash_counts['CrashCount'].fillna(0, inplace=True)
 
     # return the merged dataframe
-    return roadSegmentsAndCrashCounts
+    return road_segments_and_crash_counts
