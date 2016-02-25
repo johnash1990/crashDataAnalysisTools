@@ -1,9 +1,10 @@
 import os
 import pandas as pd
+
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-def PlotXVsY(df, colname_x, colname_y):
+def plot_x_vs_y(df, colname_x, colname_y):
     """
     scatter plot of attribute x against y
     Parameters:
@@ -20,14 +21,14 @@ def PlotXVsY(df, colname_x, colname_y):
     return plt.figure()
 
 
-def PlotModelCDF(rmodel, lowerb, upperb, modelname):
+def plot_model_cdf(rmodel, lowerb, upperb, modelname):
     """
     plot of model CDF
     Parameters:
     @model a regression model, e.g. Logit model or Probit model
-    @lowerb {double} the lower bound of the dataset
-    @upperb {double} the upper bound of the dataset
-    @modelname {string} the name of the model, e.g. Probit or Logit
+    @lowerb {float} the lower bound of the dataset
+    @upperb {float} the upper bound of the dataset
+    @modelname {float} the name of the model, e.g. Probit or Logit
     Return:
     the produced figure
     """
@@ -39,7 +40,7 @@ def PlotModelCDF(rmodel, lowerb, upperb, modelname):
     return fig
 
 
-def SaveToPDF(fig, filename):
+def save_to_pdf(fig, filename):
     """
     Save fig to PDF
     Parameters:
@@ -52,16 +53,3 @@ def SaveToPDF(fig, filename):
     pp.savefig(fig)
     pp.close()
     return filename + '.pdf'
-
-
-def SaveToCSV(df, filename):
-    """
-    Save a dataframe to a csv file
-    Parameters:
-    @df the dataframe to be saved
-    @filename {string} file name, without suffix
-    Return:
-    the file path
-    """
-    df.to_csv(filename + '.csv')
-    return filename + '.csv'
