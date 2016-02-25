@@ -1,11 +1,10 @@
-import os
-
 import pandas as pd
 import sqlite3 as dbi
 
+
 def merge_elev_and_seg(road_tb, elev_tb):
     '''
-    This is the function that integrate the grade information stored in the
+    This is the function that integrates the grade information stored in the
     elevation table into the road segment table.
 
     Two .csv files were saved in the current working directory, with Washington
@@ -14,8 +13,9 @@ def merge_elev_and_seg(road_tb, elev_tb):
     and executes a sql query to merge these two tables.
 
     The input of the function include two string variables denote the file
-    names (including file paths if needed) of the two data tables. The output
-    of the function will be the merged table in the form of a pandas dataframe.
+    names (including file paths if needed) with the '.csv' suffix of the two 
+    data tables. The output of the function will be the merged table in the 
+    form of a pandas dataframe.
     '''
 
     # read the data tables from .csv files
@@ -33,11 +33,14 @@ def merge_elev_and_seg(road_tb, elev_tb):
     cu.execute('DROP TABLE IF EXISTS roads')
     cu.execute('DROP TABLE IF EXISTS elev')
 
-    # convert the pandas datafromes into database tables through the connection
+    # convert the pandas dataframes into database tables through the connection
     roads.to_sql(name='roads', con=conn)
     elev.to_sql(name='elev', con=conn)
 
-    # sql query statement to summarize and merge elevation data
+    # This is the sql query statement that will match elevation data with the 
+    # corresponding road segments through milepost information. Aggregation 
+    # statistics (e.g., average, maximum and minimum) about grade will be added
+    # as extra columns in the roads table.
     query_merge_elev = '''
         SELECT roads.*,
                AVG(elev.Grade) AS avg_grade,
