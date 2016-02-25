@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import sqlite3 as dbi
 
+# should be two spaces between imports and function header for pep8
 def get_seg_elev(road_tb, elev_tb):
     '''
     This is the function that integrate the grade information stored in the
