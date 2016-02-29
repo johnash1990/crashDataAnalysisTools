@@ -6,7 +6,7 @@
 - Initial plotting functions
 
 ### What would be delivered next period
-- Final dataset with location and period (i.e., annual crash totals by site)
+- Final dataset with crash totals by location and period (i.e., annual crash totals by site)
 - Unit tests of the data merging functions
 - Intinial modeling and preliminary results
 
