@@ -1,6 +1,6 @@
 # Standup 03/07/2016
 
-### Deliverables for this period
+### Progress for this period
 - Finished the data merging to obtain the final dataset
 - Initial plotting functions based on the final dataset
 - Some initial modeling and preliminary results
