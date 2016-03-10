@@ -5,18 +5,19 @@ import sqlite3 as dbi
 import matplotlib.pyplot as plt
 
 
-def merge_data(road_tb, elev_tb, acc_tb):
+def merge_data(road_tb, elev_tb, acc_tb, curv_tb):
     '''
-    This is the function that integrates the grade information stored in the
-    elevation table into the road segment table.
+    This function combines four datasets to get yearly crash totals for each
+    road segment. The inputs are as four csv files saved in the current
+    working directory that contain road inventory data, elevation/grade data,
+    crash count data, and roadway horizontal alignment (curve) data.
 
-    Two .csv files were saved in the current working directory, with Washington
-    State road segment data and elevation information stored separately.
-    The function creates a database which contains these two tables together
-    and executes a sql query to merge these two tables.
+    The function creates a database which contains four tables, one for each
+    of the aforementioned csv files. The tables are then merged via a sql
+    query.
 
-    The input of the function include two string variables denote the file
-    names (including file paths if needed) with the '.csv' suffix of the two
+    The input of the function include four string variables denote the file
+    names (including file paths if needed) with the '.csv' suffix of the four
     data tables. The output of the function will be the merged table in the
     form of a pandas dataframe.
     '''
@@ -27,6 +28,7 @@ def merge_data(road_tb, elev_tb, acc_tb):
     road = pd.read_csv(road_tb)
     elev = pd.read_csv(elev_tb)
     acc = pd.read_csv(acc_tb)
+    curv = pd.read_csv(curv_tb)
 
     # create a connection to the crash database in the current work directory
     # the database will be created if it does not exist
@@ -39,29 +41,33 @@ def merge_data(road_tb, elev_tb, acc_tb):
     cu.execute('DROP TABLE IF EXISTS road')
     cu.execute('DROP TABLE IF EXISTS elev')
     cu.execute('DROP TABLE IF EXISTS acc')
+    cu.execute('DROP TABLE IF EXISTS curv')
 
     # convert the pandas dataframes into database tables through the connection
     road.to_sql(name='road', con=conn)
     elev.to_sql(name='elev', con=conn)
     acc.to_sql(name='acc', con=conn)
+    curv.to_sql(name='curv', con=conn)
 
     # This is the sql query statement that will match elevation data with the
     # corresponding road segments through milepost information. Aggregation
     # statistics (e.g., average, maximum and minimum) about grade will be added
     # as extra columns in the roads table.
     query_merge_data = '''
-        SELECT road.*,
+        SELECT road.*, curv.dir_curv, curv.deg_curv,
                AVG(elev.Grade) AS avg_grade,
                MAX(elev.Grade) AS max_grade,
                MIN(elev.Grade) AS min_grade,
                COUNT(acc.caseno) as crash_count
-        FROM road, elev, acc
+        FROM road, elev, acc, curv
         WHERE road.road_inv = elev.Route_id AND
               elev.milepost BETWEEN road.begmp AND road.endmp AND
               road.road_inv = acc.rd_inv AND
-              acc.milepost BETWEEN road.begmp AND road.endmp
-        GROUP BY road_inv, begmp, endmp
-        ORDER BY road_inv, begmp, endmp
+              acc.milepost BETWEEN road.begmp AND road.endmp AND
+              curv.curv_inv = road.road_inv AND
+              curv.begmp = road.begmp
+        GROUP BY road.road_inv, road.begmp, road.endmp
+        ORDER BY road.road_inv, road.begmp, road.endmp
         '''
 
     # get the query result and store as a pandas dataframe
