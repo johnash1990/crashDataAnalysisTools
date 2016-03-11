@@ -5,7 +5,10 @@ import sqlite3 as dbi
 import matplotlib.pyplot as plt
 
 
-def merge_data(road_tb, elev_tb, acc_tb, curv_tb):
+def set_directory():
+    os.chdir('../data/')
+
+def merge_data(road_tb, elev_tb, acc_tb, curv_tb, grad_tb):
     '''
     This function combines four datasets to get yearly crash totals for each
     road segment. The inputs are as four csv files saved in the current
@@ -23,12 +26,13 @@ def merge_data(road_tb, elev_tb, acc_tb, curv_tb):
     '''
 
     # read the data tables from .csv files
-    os.chdir('../data/')
+    set_directory()
 
     road = pd.read_csv(road_tb)
     elev = pd.read_csv(elev_tb)
     acc = pd.read_csv(acc_tb)
     curv = pd.read_csv(curv_tb)
+    grad = pd.read_csv(grad_tb)
 
     # create a connection to the crash database in the current work directory
     # the database will be created if it does not exist
@@ -42,40 +46,109 @@ def merge_data(road_tb, elev_tb, acc_tb, curv_tb):
     cu.execute('DROP TABLE IF EXISTS elev')
     cu.execute('DROP TABLE IF EXISTS acc')
     cu.execute('DROP TABLE IF EXISTS curv')
+    cu.execute('DROP TABLE IF EXISTS grad')
 
     # convert the pandas dataframes into database tables through the connection
     road.to_sql(name='road', con=conn)
     elev.to_sql(name='elev', con=conn)
     acc.to_sql(name='acc', con=conn)
     curv.to_sql(name='curv', con=conn)
+    grad.to_sql(name='grad', con=conn)
+
+    qry_compute_signed_grade = '''
+        UPDATE grad
+        SET pct_grad =
+            CASE WHEN dir_grad='-' THEN -1*pct_grad
+            ELSE pct_grad
+        END
+        '''
+
+    cu.execute(qry_compute_signed_grade)
 
     # This is the sql query statement that will match elevation data with the
     # corresponding road segments through milepost information. Aggregation
     # statistics (e.g., average, maximum and minimum) about grade will be added
     # as extra columns in the roads table.
-    query_merge_data = '''
-        SELECT road.*, curv.dir_curv, curv.deg_curv,
-               AVG(elev.Grade) AS avg_grade,
-               MAX(elev.Grade) AS max_grade,
-               MIN(elev.Grade) AS min_grade,
-               COUNT(acc.caseno) as crash_count
-        FROM road, elev, acc, curv
-        WHERE road.road_inv = elev.Route_id AND
-              elev.milepost BETWEEN road.begmp AND road.endmp AND
-              road.road_inv = acc.rd_inv AND
-              acc.milepost BETWEEN road.begmp AND road.endmp AND
-              curv.curv_inv = road.road_inv AND
-              curv.begmp = road.begmp
-        GROUP BY road.road_inv, road.begmp, road.endmp
-        ORDER BY road.road_inv, road.begmp, road.endmp
-        '''
 
+    qry_merge_elev = '''
+    CREATE VIEW merge_elev AS
+    SELECT road.*,
+           AVG(elev.Grade) AS avg_grad,
+           MAX(elev.Grade) AS max_grad,
+           MIN(elev.Grade) AS min_grad
+    FROM road LEFT JOIN elev
+    ON road.road_inv = elev.Route_id AND
+       elev.milepost BETWEEN road.begmp AND road.endmp
+    GROUP BY road.road_inv, road.begmp, road.endmp
+    '''
+
+    qry_merge_grad = '''
+    CREATE VIEW merge_grad AS
+    SELECT lshl_typ, med_type, rshl_typ, surf_typ,
+           road_inv, spd_limt, e.begmp AS begmp, endmp, lanewid,
+           no_lanes, lshldwid, rshldwid, medwid, seg_lng, aadt,
+           CASE WHEN avg_grad IS NOT NULL THEN avg_grad
+           ELSE AVG(pct_grad) END AS avg_grad,
+           CASE WHEN max_grad IS NOT NULL THEN max_grad
+           ELSE MAX(pct_grad) END AS max_grad,
+           CASE WHEN min_grad IS NOT NULL THEN min_grad
+           ELSE MIN(pct_grad) END AS min_grad
+    FROM merge_elev AS e LEFT JOIN grad
+    ON e.road_inv = grad.grad_inv AND
+       grad.begmp BETWEEN e.begmp AND e.endmp
+    GROUP BY e.road_inv, e.begmp, e.endmp
+    '''
+
+    qry_merge_curv = '''
+    CREATE VIEW merge_curv AS
+    SELECT g.*,
+           COUNT(curv.dir_curv) AS curv_count,
+           MAX(curv.deg_curv) AS max_deg_curv
+    FROM merge_grad AS g LEFT JOIN curv
+    ON curv.curv_inv = g.road_inv AND
+       curv.begmp BETWEEN g.begmp AND g.endmp
+    GROUP BY g.road_inv, g.begmp, g.endmp
+    '''
+
+    qry_merge_acc = '''
+    CREATE TABLE crash_data AS
+    SELECT c.*,
+           COUNT(acc.caseno) AS acc_count
+    FROM merge_curv AS c LEFT JOIN acc
+    ON c.road_inv = acc.rd_inv AND
+       acc.milepost BETWEEN c.begmp AND c.endmp
+    GROUP BY c.road_inv, c.begmp, c.endmp
+    ORDER BY c.road_inv, c.begmp, c.endmp
+    '''
+
+    cu.execute("DROP VIEW IF EXISTS merge_elev")
+    cu.execute("DROP VIEW IF EXISTS merge_grad")
+    cu.execute("DROP VIEW IF EXISTS merge_curv")
+    cu.execute('DROP TABLE IF EXISTS crash_data')
+
+    cu.execute(qry_merge_elev)
+    cu.execute(qry_merge_grad)
+    cu.execute(qry_merge_curv)
+    cu.execute(qry_merge_acc)
+
+def get_data():
+    # set the working directory
+    set_directory()
     # get the query result and store as a pandas dataframe
-    query_result = pd.read_sql(query_merge_data, con=conn)
+
+    table_list = pd.read_sql('''
+                             SELECT name FROM sqlite_master
+                             WHERE type = "table"
+                             ''',
+                             con=conn)
+    if not 'crash_data' in table_list[name]:
+        merge_data()
+
+    query_result = pd.read_sql('SELECT * FROM crash_data,
+                                con=conn)
 
     # return the merged table
     return query_result
-
 
 def plot_x_vs_y(df, colname_x, colname_y):
     """
