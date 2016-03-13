@@ -177,6 +177,9 @@ def merge_data_by_year(dfList):
         dfFinal = pd.merge(df_first_two_years, dfList[i][colList], how='left',
                             on=colList[0:3])
     
+     # add a column for the log of the average aadt
+    dfFinal['log_avg_aadt'] = np.log(dfFinal['avg_aadt'])
+
     # add a column for the segment length
     dfFinal['segment_len'] = dfFinal['endmp']-dfFinal['begmp']
 
