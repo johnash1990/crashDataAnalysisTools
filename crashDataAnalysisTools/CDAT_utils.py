@@ -150,6 +150,36 @@ def get_data():
     # return the merged table
     return query_result
 
+def merge_data_by_year(dfList):
+    # take a subset of the columns that we want to merge
+    colList = ['road_inv','begmp','endmp','aadt','acc_count']
+
+    # add two cols to the first df to calc the avg aadt and total acc counts
+    dfList[0]['avg_aadt'] = 0
+    dfList[0]['total_acc_ct'] = 0
+
+    # loop over all data frames in the list and update total
+    # counts of aadt and accidents
+    for df in dfList:
+        dfList[0]['avg_aadt'] = dfList[0]['avg_aadt'] + df['aadt']
+        dfList[0]['total_acc_ct'] = dfList[0]['total_acc_ct'] + df['acc_count']
+
+    # divide by the length of the list of data frames to get the average aadt
+    dfList[0]['avg_aadt'] = dfList[0]['avg_aadt']/len(dfList)
+
+    # merge data for the first two years (only keep aadt and crash
+    # count from 2nd year)
+    df_first_two_years = pd.merge(dfList[0], dfList[1][colList],
+                                  how='left',on=colList[0:3])
+
+    # if there are more than 2 years, merge in the data from years 3 and beyond
+    for i in range (2,len(dfList)):
+        dfFinal = pd.merge(df_first_two_years, dfList[i][colList], how='left',
+                            on=colList[0:3])
+    
+    # return the final data frame
+    return dfFinal
+
 def plot_x_vs_y(df, colname_x, colname_y):
     """
     scatter plot of attribute x against y
