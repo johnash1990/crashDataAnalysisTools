@@ -177,6 +177,12 @@ def merge_data_by_year(dfList):
         dfFinal = pd.merge(df_first_two_years, dfList[i][colList], how='left',
                             on=colList[0:3])
     
+    # add a column for the segment length
+    dfFinal['segment_len'] = dfFinal['endmp']-dfFinal['begmp']
+
+    # add a column for the offset (=log(segment length*number of years in analysis period))
+    dfFinal['offset'] = np.log(dfFinal['segment_len']*len(dfList))
+
     # return the final data frame
     return dfFinal
 
