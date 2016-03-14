@@ -1,6 +1,8 @@
+import numpy as np
+import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-import pandas as pd
+
 
 def compute_spf(nb_model,predictors):
     # compute the safety performance function
@@ -9,7 +11,7 @@ def compute_spf(nb_model,predictors):
     return spf
 
 def compute_eb_weights(nb_model,predictors,segment_lengths):
-    # the NB variance is mu+alpha*mu^2 where alpha=1/scale param of the NB distr
+    # the nb variance is mu+alpha*mu^2 where alpha=1/scale param of the nb distr
     # extract the scale param and get alpha
     alpha = 1/nb_model.scale
 
@@ -55,6 +57,31 @@ def calc_accid_reduc_potential(nb_model, predictors, segment_lengths, observed_c
     arp = pd.DataFrame(arp,columns=['ARP'])
 
     return arp
+
+def calc_var_eta_hat(model,data):
+    # note data is the design matrix
+
+    # make a vector of zeros to store the output
+    var_eta_hat = np.zeros([data.shape[0],1])
+
+    # get the variance-covariance matrix, convert from pd dataframe to np matrix
+    cov_mat = model.normalized_cov_params.as_matrix()
+
+    # add a column of 1's to the design matrix for beta_0
+    data.insert(0,'intercept',1)
+
+    # loop through the upper right half of the cov mat
+    for i in range(0,len(model.params)):
+        for j in range(0,i+1):
+            # variance term
+            if (i==j):
+                var_eta_hat = var_eta_hat +  cov_mat[i,j]
+                *(data[[i]].as_matrix()**2)
+            else: #covariance term
+                var_eta_hat = var_eta_hat + cov_mat[i,j]*2
+                *data[[i]].as_matrix()*data[[j]].as_matrix()
+
+    return var_eta_hat
 
 def calc_ci_mu:
     return
