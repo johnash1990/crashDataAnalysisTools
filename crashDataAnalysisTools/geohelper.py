@@ -48,16 +48,36 @@ def draw_crash_map(shpurl, name, llon, llat, rlon, rlat, lons, lats, data):
                   urcrnrlon=rlon, urcrnrlat=rlat, resolution='i',
                   projection='tmerc', lat_0=(llat+rlat)/2,
                   lon_0=(llon+rlon)/2)
+
     # read the shapefile
     map.readshapefile(shpurl, 'highway')
 
     # get the max value from the data to scale the size of the marker
     max_val = max(data)
+
     # plot the hot spots one by one with the marker
     # size corresponding to the data
     for index in range(len(data)):
         x, y = map(lons[index], lats[index])
-        map.plot(x, y, marker='o', color='r', markersize=((data[index]*25/max_val)+5))
+        map.plot(x, y, marker='o', color='r',
+                 markersize=((data[index]*15/max_val)+5))
+        # update the min value that is larger than 0
+        if data[index] > 0 and data[index] < min_val:
+            min_val = data[index]
+
+    # create legends
+    # the largest marker and the smallest marker
+    red_dot1, = plt.plot([], "ro", markersize=20)
+    red_dot2, = plt.plot([], "ro", markersize=5)
+
+    # determine the legend according to the parameter @name
+    if name == 'rate':
+        str1 = 'Max crash rate:' + str(round(max_val, 2))
+        str2 = 'Min crash rate:' + str(round(min_val, 2))
+    else:
+        str1 = 'Max crash severity:' + str(round(max_val, 2))
+        str2 = 'Min crash severity:' + str(round(min_val, 2))
+    plt.legend([red_dot1, red_dot2], [str1, str2])
 
     # show the map
     plt.show()
