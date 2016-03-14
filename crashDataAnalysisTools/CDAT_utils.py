@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 def set_directory():
     os.chdir('../data/')
 
-def merge_data():
+def get_annual_data(year, conn):
     '''
     This function combines four datasets to get yearly crash totals for each
     road segment. The inputs are as four csv files saved in the current
@@ -29,32 +29,31 @@ def merge_data():
     # read the data tables from .csv files
     set_directory()
     
-    road = pd.read_csv('road_WA.csv')
-    elev = pd.read_csv('elev_WA.csv')
-    acc = pd.read_csv('acc_WA.csv')
-    curv = pd.read_csv('curv_WA.csv')
-    grad = pd.read_csv('grad_WA.csv')
+    road = pd.read_csv('wa'+year+'road.csv')
+    acc = pd.read_csv('wa'+year+'acc.csv')
+    curv = pd.read_csv('wa'+year+'curv.csv')
+    grad = pd.read_csv('wa'+year+'grad.csv')
+    elev = pd.read_csv('wa_elev.csv')
 
     # create a connection to the crash database in the current work directory
     # the database will be created if it does not exist
-    conn = dbi.connect('crash_database')
-
+    
     # create a database cursor that can execute query statements
     cu = conn.cursor()
 
     # drop tables in the database if needed
     cu.execute('DROP TABLE IF EXISTS road')
-    cu.execute('DROP TABLE IF EXISTS elev')
     cu.execute('DROP TABLE IF EXISTS acc')
     cu.execute('DROP TABLE IF EXISTS curv')
     cu.execute('DROP TABLE IF EXISTS grad')
+    cu.execute('DROP TABLE IF EXISTS elev')
 
     # convert the pandas dataframes into database tables through the connection
     road.to_sql(name='road', con=conn)
-    elev.to_sql(name='elev', con=conn)
     acc.to_sql(name='acc', con=conn)
     curv.to_sql(name='curv', con=conn)
     grad.to_sql(name='grad', con=conn)
+    elev.to_sql(name='elev', con=conn)
 
     qry_compute_signed_grade = '''
         UPDATE grad
@@ -74,6 +73,8 @@ def merge_data():
     qry_merge_elev = '''
     CREATE VIEW merge_elev AS
     SELECT road.*,
+           AVG(elev.Longitude) AS longitude,
+           AVG(elev.Latitude) AS latitude,
            AVG(elev.Grade) AS avg_grad,
            MAX(elev.Grade) AS max_grad,
            MIN(elev.Grade) AS min_grad
@@ -86,8 +87,8 @@ def merge_data():
     qry_merge_grad = '''
     CREATE VIEW merge_grad AS
     SELECT lshl_typ, med_type, rshl_typ, surf_typ,
-           road_inv, spd_limt, e.begmp AS begmp, endmp, lanewid,
-           no_lanes, lshldwid, rshldwid, medwid, seg_lng, aadt,
+           road_inv, spd_limt, e.begmp AS begmp, endmp, lanewid, no_lanes, 
+           lshldwid, rshldwid, medwid, seg_lng, aadt, longitude, latitude,
            CASE WHEN avg_grad IS NOT NULL THEN avg_grad
            ELSE AVG(pct_grad) END AS avg_grad,
            CASE WHEN max_grad IS NOT NULL THEN max_grad
@@ -112,7 +113,6 @@ def merge_data():
     '''
 
     qry_merge_acc = '''
-    CREATE TABLE crash_data AS
     SELECT c.*,
            COUNT(acc.caseno) AS acc_count
     FROM merge_curv AS c LEFT JOIN acc
@@ -125,16 +125,126 @@ def merge_data():
     cu.execute("DROP VIEW IF EXISTS merge_elev")
     cu.execute("DROP VIEW IF EXISTS merge_grad")
     cu.execute("DROP VIEW IF EXISTS merge_curv")
-    cu.execute('DROP TABLE IF EXISTS crash_data')
-
+    
     cu.execute(qry_merge_elev)
     cu.execute(qry_merge_grad)
     cu.execute(qry_merge_curv)
-    cu.execute(qry_merge_acc)
+    
+    annual_data = pd.read_sql(qry_merge_acc, con=conn)
     
     conn.commit()
-    conn.close()
+    
+    return annual_data
 
+def merge_annual_data(conn):
+    
+    table_list = pd.read_sql('''
+                             SELECT name FROM sqlite_master
+                             WHERE type = "table"
+                             ''',
+                             con=conn)
+    
+    if not any(table_list.name == 'data_06'):
+        data_06 = get_annual_data('06',conn)
+        data_06.to_sql(name='data_06', con=conn)
+
+    if not any(table_list.name == 'data_07'):
+        data_07 = get_annual_data('07',conn)
+        data_07.to_sql(name='data_07', con=conn)
+    
+    if not any(table_list.name == 'data_08'):
+        data_08 = get_annual_data('08',conn)
+        data_08.to_sql(name='data_08', con=conn)
+
+    if not any(table_list.name == 'data_09'):
+        data_09 = get_annual_data('09',conn)
+        data_09.to_sql(name='data_09', con=conn)
+    
+    if not any(table_list.name == 'data_10'):
+        data_10 = get_annual_data('10',conn)
+        data_10.to_sql(name='data_10', con=conn)
+    
+    if not any(table_list.name == 'data_11'):
+        data_11 = get_annual_data('11',conn)
+        data_11.to_sql(name='data_11', con=conn)
+    
+    qry_merge_data = '''
+    CREATE VIEW merge_data AS
+    SELECT d.*,
+           data_11.aadt AS aadt_11, data_11.acc_count AS acc_ct_11
+    FROM (
+    
+    SELECT c.*,
+           data_10.aadt AS aadt_10, data_10.acc_count AS acc_ct_10
+    FROM (
+    
+    SELECT b.*,
+           data_09.aadt AS aadt_09, data_09.acc_count AS acc_ct_09
+    FROM (
+    
+    SELECT a.*,
+           data_08.aadt AS aadt_08, data_08.acc_count AS acc_ct_08
+    FROM (
+    
+    SELECT data_06.*,
+           data_06.aadt AS aadt_06, data_06.acc_count AS acc_ct_06,
+           data_07.aadt AS aadt_07, data_07.acc_count AS acc_ct_07
+    FROM data_06
+    
+    LEFT JOIN data_07
+    ON data_06.road_inv = data_07.road_inv AND
+       data_06.begmp = data_07.begmp AND
+       data_06.endmp = data_07.endmp
+    ) AS a
+    
+    LEFT JOIN data_08
+    ON a.road_inv = data_08.road_inv AND
+       a.begmp = data_08.begmp AND
+       a.endmp = data_08.endmp
+    ) AS b
+    
+    LEFT JOIN data_09
+    ON b.road_inv = data_09.road_inv AND
+       b.begmp = data_09.begmp AND
+       b.endmp = data_09.endmp
+    ) AS c
+    
+    LEFT JOIN data_10
+    ON c.road_inv = data_10.road_inv AND
+       c.begmp = data_10.begmp AND
+       c.endmp = data_10.endmp
+    ) AS d
+    
+    LEFT JOIN data_11
+    ON d.road_inv = data_11.road_inv AND
+       d.begmp = data_11.begmp AND
+       d.endmp = data_11.endmp
+    '''
+    
+    qry_final_data = '''
+    CREATE TABLE crash_data AS
+    SELECT lshl_typ, med_type, rshl_typ, surf_typ, road_inv,
+           spd_limt, begmp, endmp, lanewid, no_lanes, lshldwid,
+           rshldwid, medwid, seg_lng, longitude, latitude,
+           avg_grad, max_grad, min_grad, curv_count, max_deg_curv,
+           aadt_06, acc_ct_06, aadt_07, acc_ct_07, aadt_08, acc_ct_08,
+           aadt_09, acc_ct_09, aadt_10, acc_ct_10, aadt_11, acc_ct_11,
+           (aadt_06+aadt_07+aadt_08+aadt_09+aadt_10+aadt_11)/6 AS avg_aadt,
+           (acc_ct_06+acc_ct_07+acc_ct_08+acc_ct_09+acc_ct_10+acc_ct_11) AS tot_acc_ct
+    FROM merge_data
+    ORDER BY road_inv, begmp, endmp
+    '''
+
+    cu = conn.cursor()
+    
+    cu.execute('DROP VIEW IF EXISTS merge_data')
+    cu.execute('DROP TABLE IF EXISTS crash_data')
+    
+    cu.execute(qry_merge_data)
+    cu.execute(qry_final_data)
+    
+    conn.commit()
+    
 def get_data():
     # set the working directory
     set_directory()
@@ -148,52 +258,13 @@ def get_data():
                              con=conn)
     
     if not any(table_list.name=='crash_data'):
-        merge_data()
+        merge_annual_data(conn)
 
-    crash_data = pd.read_sql('SELECT * FROM crash_data, con=conn)
+    crash_data = pd.read_sql('SELECT * FROM crash_data', con=conn)
     
     conn.close()
     # return the merged table
     return crash_data
-
-def merge_data_by_year(dfList):
-    # take a subset of the columns that we want to merge
-    colList = ['road_inv','begmp','endmp','aadt','acc_count']
-
-    # add two cols to the first df to calc the avg aadt and total acc counts
-    dfList[0]['avg_aadt'] = 0
-    dfList[0]['total_acc_ct'] = 0
-
-    # loop over all data frames in the list and update total
-    # counts of aadt and accidents
-    for df in dfList:
-        dfList[0]['avg_aadt'] = dfList[0]['avg_aadt'] + df['aadt']
-        dfList[0]['total_acc_ct'] = dfList[0]['total_acc_ct'] + df['acc_count']
-
-    # divide by the length of the list of data frames to get the average aadt
-    dfList[0]['avg_aadt'] = dfList[0]['avg_aadt']/len(dfList)
-
-    # merge data for the first two years (only keep aadt and crash
-    # count from 2nd year)
-    df_first_two_years = pd.merge(dfList[0], dfList[1][colList],
-                                  how='left',on=colList[0:3])
-
-    # if there are more than 2 years, merge in the data from years 3 and beyond
-    for i in range (2,len(dfList)):
-        dfFinal = pd.merge(df_first_two_years, dfList[i][colList], how='left',
-                            on=colList[0:3])
-    
-     # add a column for the log of the average aadt
-    dfFinal['log_avg_aadt'] = np.log(dfFinal['avg_aadt'])
-
-    # add a column for the segment length
-    dfFinal['segment_len'] = dfFinal['endmp']-dfFinal['begmp']
-
-    # add a column for the offset (=log(segment length*number of years in analysis period))
-    dfFinal['offset'] = np.log(dfFinal['segment_len']*len(dfList))
-
-    # return the final data frame
-    return dfFinal
 
 def plot_x_vs_y(df, colname_x, colname_y):
     """
