@@ -81,7 +81,6 @@ def compute_eb_weights(nb_model, predictors, segment_lengths):
 
     # compute the safety performance function
     spf = compute_spf(nb_model, predictors)
-    # spf = nb_model.predict(predictors)
 
     # compute the weight factor
     # w_i 1/(1+spf_i/(alpha*L_i^gamma)), take gamma=1
@@ -310,8 +309,8 @@ def calc_pi_y_nb(nb_model, mu_hat, var_eta_hat):
     return y_nb_pi
 
 
-def plot_and_save_nb_cis_and_pisa(data_design, nb_model, mu_hat,
-                                  var_eta_hat, x_axis_range, x_axis_label):
+def plot_and_save_nb_cis_and_pis(data_design, nb_model, mu_hat,
+                                 var_eta_hat, x_axis_range, x_axis_label):
     """
     Parameters:
     @data_design {pd dataframe} set of predictor variables (design matrix)
