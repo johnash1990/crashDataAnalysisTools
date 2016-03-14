@@ -52,12 +52,12 @@ def draw_crash_map(shpurl, name, llon, llat, rlon, rlat, lons, lats, data):
     map.readshapefile(shpurl, 'highway')
 
     # get the max value from the data to scale the size of the marker
-    max = max(data)
+    max_val = max(data)
     # plot the hot spots one by one with the marker
     # size corresponding to the data
     for index in range(len(data)):
         x, y = map(lons[index], lats[index])
-        map.plot(x, y, marker='o', color='r', markersize=(data[index]*25/max))
+        map.plot(x, y, marker='o', color='r', markersize=((data[index]*25/max_val)+5))
 
     # show the map
     plt.show()
