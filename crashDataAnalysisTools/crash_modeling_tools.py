@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
@@ -36,7 +37,7 @@ def compute_spf(nb_model, predictors):
     @nb_model {statsmodels genmod} negative binomial (nb) regression model
     @predictors {pd dataframe} set of predictor variables
     Return:
-    @spf {numpy array} values of the spf
+    @spf {numpy y} values of the spf
     Compute the values of the safety performance function (spf)
     using a negative binomial regression model computed via
     the statsmodels package and a given set of predictors
@@ -44,6 +45,20 @@ def compute_spf(nb_model, predictors):
     spf = nb_model.predict(predictors)
 
     return spf
+
+
+def compute_alpha(nb_model):
+    """
+    Parameters:
+    @nb_model {statsmodels genmod} negative binomial (nb) regression model
+    Return:
+    @alpha {float} inverse of nb scale paramter
+    This function computes and returns the value of alpha, a parameter used in
+    calculation of the nb variance and also in various procedures relying on
+    an nb model, such as implementation of the eb method.
+    """
+    alpha = 1/nb_model.scale
+    return alpha
 
 
 def compute_eb_weights(nb_model, predictors, segment_lengths):
@@ -61,7 +76,7 @@ def compute_eb_weights(nb_model, predictors, segment_lengths):
     """
     # the nb variance is mu+alpha*mu^2 where alpha=1/scale param of the
     # nb distr extract the scale param and get alpha
-    alpha = 1/nb_model.scale
+    alpha = compute_alpha(nb_model)
 
     # compute the safety performance function
     spf = compute_spf(nb_model, predictors)
@@ -162,27 +177,133 @@ def calc_var_eta_hat(model, data):
         for j in range(0, i+1):
             # variance term
             if (i == j):
-                var_eta_hat = var_eta_hat + cov_mat[i, j]
-                *(data[[i]].as_matrix()**2)
+                var_eta_hat = var_eta_hat + cov_mat[i, j] * \
+                    (data[[i]].as_matrix()**2)
             # covariance term
             else:
-                var_eta_hat = var_eta_hat + cov_mat[i, j]*2
-                *data[[i]].as_matrix()*data[[j]].as_matrix()
+                var_eta_hat = var_eta_hat + cov_mat[i, j] * 2 * \
+                    data[[i]].as_matrix()*data[[j]].as_matrix()
 
     return var_eta_hat
 
 
-def calc_ci_mu:
-    return
+def calc_mu_hat_nb(nb_model, data):
+    """
+    Parameters:
+    @nb_model {statsmodels genmod} negative binomial (nb) regression model
+    @data {pd dataframe} set of predictor variables (design matrix)
+    Return:
+    @mu_hat_nb {numpy array} vector of values of mu (aka the poisson mean)
+    This function is used to compute the value of the Poisson mean at
+    varying values of predictors in a given set.
+    """
+    # make a vector to store the output
+    mu_hat_nb = np.zeros([data.shape[0], 1])
+
+    # loop over the model coefficients and multiply each one by
+    # the corresponding row in the data frame, add the value
+    # to the running sum
+    for i in range(0, len(nb_model.params)):
+        mu_hat_nb = mu_hat_nb + data[[i]].as_matrix()*nb_model.params[i]
+
+    # since the nb regression model uses a log link function, we must
+    # exponentiate the final output
+    mu_hat_nb = np.exp(mu_hat_nb)
+
+    return mu_hat_nb
 
 
-def calc_pi_m:
-    return
+def calc_ci_mu_nb(mu_hat_nb, var_eta_hat):
+    """
+    Parameters:
+    @mu_hat_nb {numpy array} vector of values of mu (aka the poisson mean)
+    @var_eta_hat {pd dataframe} vector of variance values for the
+    linear predictor
+    Return:
+    @mu_hat_nb_ci {pd dataframe} dataframe containing the lower and upper
+    bounds for the 95% confidence interval (CI) for mu, the Poisson mean
+    This function is used to compute the lower and upper bounds of the
+    95% confidence interval for the Poisson mean as calcuated based on a
+    given predictor set.
+    """
+    # calcuate the lower bound for the confidence interval for mu
+    lb_ci_mu_nb = mu_hat_nb/np.exp(norm.ppf(0.975)*np.sqrt(var_eta_hat))
+
+    # calcuate the upper bound for the confidence interval for mu
+    ub_ci_mu_nb = mu_hat_nb*np.exp(norm.ppf(0.975)*np.sqrt(var_eta_hat))
+
+    # combine the columns into a two-dimensional matrix
+    mu_ci_matrix = np.column_stack((lb_ci_mu_nb, ub_ci_mu_nb))
+
+    # return the result (i.e., LB and UB as a dataframe)
+    mu_hat_nb_ci = pd.DataFrame(mu_ci_matrix, columns=['LB CI mu', 'UB CI mu'])
+    return mu_hat_nb_ci
 
 
-def calc_pi_y:
-    return
+def calc_pi_m_nb(nb_model, mu_hat, var_eta_hat):
+    """
+    Parameters:
+    @nb_model {statsmodels genmod} negative binomial (nb) regression model
+    @mu_hat_nb {numpy array} vector of values of mu (aka the poisson mean)
+    @var_eta_hat {pd dataframe} vector of variance values for the
+    linear predictor
+    Return:
+    @m_nb_pi {pd dataframe} dataframe containing the lower and upper
+    bounds for the 95% prediction interval (PI) for m, the Poisson parameter
+    (Here, the Poisson mean does not equal the Poisson parameter as the
+    parameter includes an error term assumed to follow the gamma distribution)
+    This function is used to compute the lower and upper bounds of the
+    95% prediction interval for the Poisson parameter as calcuated based on a
+    given predictor set. Alternately, m is known as the safety.
+    """
+    # compute alpha (the nb dispersion parameter)
+    alpha = compute_alpha(nb_model)
+
+    # calcuate the lower bound for the prediction interval for m
+    lb_pi_m_nb = np.maximum(0, mu_hat-norm.ppf(0.975)*np.sqrt(mu_hat**2 *
+                            (alpha*(var_eta_hat+1)+var_eta_hat)))
+
+    # calcuate the lower bound for the prediction interval for m
+    ub_pi_m_nb = mu_hat+norm.ppf(0.975)*np.sqrt(mu_hat**2*(alpha *
+                                                (var_eta_hat+1)+var_eta_hat))
+
+    # combine the columns into a two-dimensional matrix
+    m_pi_matrix = np.column_stack((lb_pi_m_nb, ub_pi_m_nb))
+
+    # return the result (i.e., LB and UB as a dataframe)
+    m_nb_pi = pd.DataFrame(m_pi_matrix, columns=['LB PI m', 'UB PI m'])
+    return m_nb_pi
 
 
-def plot_all_intervals:
-    return
+def calc_pi_y_nb(nb_model, mu_hat, var_eta_hat):
+    """
+    Parameters:
+    @nb_model {statsmodels genmod} negative binomial (nb) regression model
+    @mu_hat_nb {numpy array} vector of values of mu (aka the poisson mean)
+    @var_eta_hat {pd dataframe} vector of variance values for the
+    linear predictor
+    Return:
+    @y_nb_pi {pd dataframe} dataframe containing the lower and upper
+    bounds for the 95% prediction interval (PI) for y, the predicted response
+    (i.e., crash count at site i) which follows a Poisson distribution when
+    conditioned on the safety m.
+    This function is used to compute the lower and upper bounds of the
+    95% prediction interval for the predicted response as calcuated based on a
+    given predictor set.
+    """
+    # compute alpha (the nb dispersion parameter)
+    alpha = compute_alpha(nb_model)
+
+    # calcuate the lower bound for the prediction interval for y
+    lb_pi_y_nb = np.zeros(mu_hat.shape[0])
+
+    # calcuate the lower bound for the prediction interval for m
+    ub_pi_y_nb = np.floor(mu_hat+np.sqrt(19)*np.sqrt(mu_hat**2 *
+                          (alpha*(var_eta_hat+1)+var_eta_hat)))
+
+    # combine the columns into a two-dimensional matrix
+    y_pi_matrix = np.column_stack((lb_pi_y_nb, ub_pi_y_nb))
+
+    # return the result (i.e., LB and UB as a dataframe)
+    y_nb_pi = pd.DataFrame(y_pi_matrix, columns=['LB PI y', 'UB PI y'])
+    return y_nb_pi
