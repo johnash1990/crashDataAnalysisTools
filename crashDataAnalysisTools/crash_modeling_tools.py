@@ -310,8 +310,8 @@ def calc_pi_y_nb(nb_model, mu_hat, var_eta_hat):
     return y_nb_pi
 
 
-def plot_and_save_nb_cis_and_pis(data_design, nb_model, mu_hat,
-                                 var_eta_hat, x_axis_range, x_axis_label):
+def plot_and_save_nb_cis_and_pisa(data_design, nb_model, mu_hat,
+                                  var_eta_hat, x_axis_range, x_axis_label):
     """
     Parameters:
     @data_design {pd dataframe} set of predictor variables (design matrix)
@@ -333,31 +333,34 @@ def plot_and_save_nb_cis_and_pis(data_design, nb_model, mu_hat,
     pi_y_nb = calc_pi_y_nb(nb_model, mu_hat, var_eta_hat)
 
     # plot mu_hat
-    plt.plot(aadt_range, mu_hat)
+    fig = plt.figure()
+    ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
+    mu_hat, = plt.plot(x_axis_range, mu_hat)
 
     # plot the 95% ci for mu
-    plt.plot(x_axis_range, ci_mu_nb['LB CI mu'], linestyle=':')
-    plt.plot(x_axis_range, ci_mu_nb['UB CI mu'], linestyle='--')
+    lb_ci_mu, = ax.plot(x_axis_range, ci_mu_nb['LB CI mu'], linestyle=':')
+    ub_ci_mu, = ax.plot(x_axis_range, ci_mu_nb['UB CI mu'], linestyle='--')
 
     # plot the 95% pi for m
-    plt.plot(x_axis_range, pi_m_nb['LB PI m'])
-    plt.plot(x_axis_range, pi_m_nb['UB PI m'], linestyle='-.')
+    lb_pi_m, = ax.plot(x_axis_range, pi_m_nb['LB PI m'])
+    ub_pi_m, = ax.plot(x_axis_range, pi_m_nb['UB PI m'], linestyle='-.')
 
     # plot the 95% pi for y
-    plt.plot(x_axis_range, pi_y_nb['LB PI y'])
-    plt.plot(x_axis_range, pi_y_nb['UB PI y'], linestyle='-')
+    lb_pi_y, = ax.plot(x_axis_range, pi_y_nb['LB PI y'])
+    ub_pi_y, = ax.plot(x_axis_range, pi_y_nb['UB PI y'], linestyle='-')
 
     # set the plot labels
     plt.title('95% CIs and PIs for NB Model', fontsize=16)
     plt.xlabel(x_axis_label, fontsize=14)
+    plt.xlim(np.min(x_axis_range), np.max(x_axis_range))
     plt.ylabel('Number of Crashes', fontsize=14)
 
     # create a legend and make it appear outside of the plot space
-    plt.legend(loc=0)
+    plt.legend([mu_hat, lb_ci_mu, ub_ci_mu, lb_pi_m, ub_pi_m, lb_pi_y,
+                ub_pi_y], ['mu_hat', 'LB CI mu', 'UB CI mu', 'LB PI m',
+                           'UB PI m', 'LB PI y', 'UB PI y'],
+               loc='center left', bbox_to_anchor=(1, 0.5), fontsize=14)
 
-    # show the plot and save
-    fig = plt.gcf()
-    plt.show()
-    plt.draw()
-    fig.set_size_inches(11, 8.5, forward=True)
+    # set the plot size and save
+    fig.set_size_inches(10, 6, forward=True)
     fig.savefig('nb_cis_and_pis.png')
