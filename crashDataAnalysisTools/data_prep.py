@@ -4,6 +4,11 @@ import sqlite3 as dbi
 
 import matplotlib.pyplot as plt
 
+from ipywidgets import interact
+
+import seaborn
+seaborn.set()
+
 
 def set_directory():
     # set the current work directory to the data folder
@@ -81,9 +86,9 @@ def get_annual_data(year, conn):
     SELECT road.*,
            AVG(elev.Longitude) AS longitude,
            AVG(elev.Latitude) AS latitude,
-           AVG(elev.Grade) AS avg_grad,
-           MAX(elev.Grade) AS max_grad,
-           MIN(elev.Grade) AS min_grad
+           AVG(elev.Grade)*100 AS avg_grad,
+           MAX(elev.Grade)*100 AS max_grad,
+           MIN(elev.Grade)*100 AS min_grad
     FROM road LEFT JOIN elev
     ON road.road_inv = elev.Route_id AND
        elev.milepost BETWEEN road.begmp AND road.endmp
@@ -321,19 +326,40 @@ def get_data():
     return crash_data
 
 
-def plot_x_vs_y(df, colname_x, colname_y):
+def plot_scatter(x='avg_aadt', y='tot_acc_ct'):
     """
-    scatter plot of attribute x against y
     Parameters:
-    @df {dataframe} datasource
-    @colname_x {string} column name for attribute x
-    @colname_y {string} column name for attribute y
-    Return:
-    @fig {matplotlib.figure} the produced figure
+    @x {string} column name for attribute x
+    @y {string} column name for attribute y
+    Draw the scatter plot of two columns in the crash dataset.
     """
-    plt.scatter(df[colname_x], df[colname_y])
-    plt.title(colname_x + ' vs. ' + colname_y)
-    plt.xlabel(colname_x)
-    plt.ylabel(colname_y)
-    plt.show()
-    return plt.figure()
+
+    # get the dataset table as a pandas dataframe
+    crash_data = get_data()
+
+    # draw the scatter plot
+    plt.clf()
+    plt.scatter(crash_data[x], crash_data[y])
+    plt.xlabel(x)
+    plt.ylabel(y)
+
+
+def plot_x_vs_y():
+    '''
+    This functions enables the interactive scatter selections of the columns of
+    the scatter plot. Two drop-down interactive widgets are created for users
+    to select the two columns shown in the scatter plot.
+    '''
+
+    # define two lists of column names from which users can define the data
+    # shown on x/y axis of the scatter plot
+    x_columns = ['spd_limt', 'lanewid', 'no_lanes', 'lshldwid', 'rshldwid',
+                 'medwid', 'seg_lng', 'avg_grad', 'max_grad', 'min_grad',
+                 'curv_count', 'max_deg_curv', 'aadt_06', 'aadt_07',
+                 'aadt_08', 'aadt_09', 'aadt_10', 'aadt_11', 'avg_aadt']
+
+    y_columns = ['acc_ct_06', 'acc_ct_07', 'acc_ct_08', 'acc_ct_09',
+                 'acc_ct_10', 'acc_ct_11', 'tot_acc_ct']
+
+    # interactive scatter plot function
+    interact(plot_scatter, x=x_columns, y=y_columns)
