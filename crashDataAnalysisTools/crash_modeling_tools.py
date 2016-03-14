@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
@@ -307,3 +308,56 @@ def calc_pi_y_nb(nb_model, mu_hat, var_eta_hat):
     # return the result (i.e., LB and UB as a dataframe)
     y_nb_pi = pd.DataFrame(y_pi_matrix, columns=['LB PI y', 'UB PI y'])
     return y_nb_pi
+
+
+def plot_and_save_nb_cis_and_pis(data_design, nb_model, mu_hat,
+                                 var_eta_hat, x_axis_range, x_axis_label):
+    """
+    Parameters:
+    @data_design {pd dataframe} set of predictor variables (design matrix)
+    @nb_model {statsmodels genmod} negative binomial (nb) regression model
+    @mu_hat_nb {numpy array} vector of values of mu (aka the poisson mean)
+    @var_eta_hat {pd dataframe} vector of variance values for the
+    linear predictor
+    @x_axis_range {numpy array} specifies numerical range of x-axis
+    @x_axis_label {String} label for x-axis
+    Return:
+    @y_nb_pi {pd dataframe}
+
+    This function plots mu as as well as the CIs for mu and the PIs for m
+    and y. It also saves the plot as a .png figure.
+    """
+    # calculate the associated confidence and prediction intervals for mu_hat
+    ci_mu_nb = calc_ci_mu_nb(mu_hat, var_eta_hat)
+    pi_m_nb = calc_pi_m_nb(nb_model, mu_hat, var_eta_hat)
+    pi_y_nb = calc_pi_y_nb(nb_model, mu_hat, var_eta_hat)
+
+    # plot mu_hat
+    plt.plot(aadt_range, mu_hat)
+
+    # plot the 95% ci for mu
+    plt.plot(x_axis_range, ci_mu_nb['LB CI mu'], linestyle=':')
+    plt.plot(x_axis_range, ci_mu_nb['UB CI mu'], linestyle='--')
+
+    # plot the 95% pi for m
+    plt.plot(x_axis_range, pi_m_nb['LB PI m'])
+    plt.plot(x_axis_range, pi_m_nb['UB PI m'], linestyle='-.')
+
+    # plot the 95% pi for y
+    plt.plot(x_axis_range, pi_y_nb['LB PI y'])
+    plt.plot(x_axis_range, pi_y_nb['UB PI y'], linestyle='-')
+
+    # set the plot labels
+    plt.title('95% CIs and PIs for NB Model', fontsize=16)
+    plt.xlabel(x_axis_label, fontsize=14)
+    plt.ylabel('Number of Crashes', fontsize=14)
+
+    # create a legend and make it appear outside of the plot space
+    plt.legend(loc=0)
+
+    # show the plot and save
+    fig = plt.gcf()
+    plt.show()
+    plt.draw()
+    fig.set_size_inches(11, 8.5, forward=True)
+    fig.savefig('nb_cis_and_pis.png')
