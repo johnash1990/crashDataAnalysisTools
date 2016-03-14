@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 def set_directory():
     os.chdir('../data/')
 
-def merge_data(road_tb, elev_tb, acc_tb, curv_tb, grad_tb):
+def merge_data():
     '''
     This function combines four datasets to get yearly crash totals for each
     road segment. The inputs are as four csv files saved in the current
@@ -27,12 +27,12 @@ def merge_data(road_tb, elev_tb, acc_tb, curv_tb, grad_tb):
 
     # read the data tables from .csv files
     set_directory()
-
-    road = pd.read_csv(road_tb)
-    elev = pd.read_csv(elev_tb)
-    acc = pd.read_csv(acc_tb)
-    curv = pd.read_csv(curv_tb)
-    grad = pd.read_csv(grad_tb)
+    
+    road = pd.read_csv('road_WA.csv')
+    elev = pd.read_csv('elev_WA.csv')
+    acc = pd.read_csv('acc_WA.csv')
+    curv = pd.read_csv('curv_WA.csv')
+    grad = pd.read_csv('grad_WA.csv')
 
     # create a connection to the crash database in the current work directory
     # the database will be created if it does not exist
@@ -130,25 +130,30 @@ def merge_data(road_tb, elev_tb, acc_tb, curv_tb, grad_tb):
     cu.execute(qry_merge_grad)
     cu.execute(qry_merge_curv)
     cu.execute(qry_merge_acc)
+    
+    conn.commit()
+    conn.close()
 
 def get_data():
     # set the working directory
     set_directory()
     # get the query result and store as a pandas dataframe
-
+    conn = dbi.connect('crash_database')
+    
     table_list = pd.read_sql('''
                              SELECT name FROM sqlite_master
                              WHERE type = "table"
                              ''',
                              con=conn)
-    if not 'crash_data' in table_list[name]:
+    
+    if not any(table_list.name=='crash_data'):
         merge_data()
 
-    query_result = pd.read_sql('SELECT * FROM crash_data,
-                                con=conn)
-
+    crash_data = pd.read_sql('SELECT * FROM crash_data, con=conn)
+    
+    conn.close()
     # return the merged table
-    return query_result
+    return crash_data
 
 def merge_data_by_year(dfList):
     # take a subset of the columns that we want to merge
