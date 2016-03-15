@@ -82,9 +82,9 @@
 # Freeway Elevation Data
 The dataset is created by the Smart Transportation Applications & Research Laboratory (STAR Lab) at University of Washington. It contains an individual table for freeway elevation information (at 10 ft. intervals) in each state in the US. The elevation information is extracted from Google Earth elevation database. In the class project, only Washington State elevation data was used.
 
-## Washington State Freeway Elevation Data (total size: 67.72 MB)
+## Washington State Freeway Elevation Data (total size: 37.14 MB)
 - **Files:**
-	- WA.csv (size: 67.72 MB, dimension: 926752 x 8)
+	- wa_elev.csv (size: 37.14 MB, dimension: 463,845 x 8)
 
 - **Columns:**
 	- State: US Postal Service abbreviated state name
