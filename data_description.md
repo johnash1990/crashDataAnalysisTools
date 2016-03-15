@@ -82,9 +82,9 @@
 # Freeway Elevation Data
 The dataset is created by the Smart Transportation Applications & Research Laboratory (STAR Lab) at University of Washington. It contains an individual table for freeway elevation information (at 10 ft. intervals) in each state in the US. The elevation information is extracted from Google Earth elevation database. In the class project, only Washington State elevation data was used.
 
-## Washington State Freeway Elevation Data (total size: 67.72 MB)
+## Washington State Freeway Elevation Data (total size: 37.14 MB)
 - **Files:**
-	- WA.csv (size: 67.72 MB, dimension: 926752 x 8)
+	- wa_elev.csv (size: 37.14 MB, dimension: 463,845 x 8)
 
 - **Columns:**
 	- State: US Postal Service abbreviated state name
@@ -95,41 +95,6 @@ The dataset is created by the Smart Transportation Applications & Research Labor
 	- Latitude: Geographic latitude (in degrees) for each point
 	- Milepost: Interstate milepost information for each point (mi.).
 	- Elevation: Elevation readings are in feet. The NAD27 datum is referenced by Google Earth.
-
-# Weather Data
-
-## WA weather Data (total size: ~1 MB)
-- **Files:** 
-	- weather_06.txt (size: 0.03 MB, dimension: 365 x 23)
-	- weather_07.txt (size: 0.03 MB, dimension: 365 x 23)
-	- weather_08.txt (size: 0.03 MB, dimension: 365 x 23)
-	- weather_09.txt (size: 0.03 MB, dimension: 365 x 23)
-	- weather_10.txt (size: 0.03 MB, dimension: 365 x 23)
-	- weather_11.txt (size: 0.03 MB, dimension: 365 x 23)
-- **Columns:**
-	- PST: date
-    - Max TemperatureF
-    - Mean TemperatureF
-    - Min TemperatureF
-    - Max Dew PointF
-    - Mean Dew PointF
-    - Min DewpointF
-    - Max Humidity
-    - Mean Humidity
-    - Min Humidity
-    - Max Sea Level PressureIn
-    - Mean Sea Level PressureIn
-    - Min Sea Level PressureIn
-    - Max VisibilityMiles
-    - Mean VisibilityMiles
-    - Min VisibilityMiles
-    - Max Wind SpeedMPH
-    - Mean Wind SpeedMPH
-    - Max Gust SpeedMPH
-    - PrecipitationIn
-    - CloudCover
-    - Events: rain, fog, etc.
-    - WindDirDegrees
 
 ### Question about unit tests: 
 Is it possible to create a subset of the data for unit test purposes?

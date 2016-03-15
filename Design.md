@@ -9,7 +9,7 @@ The objective of the research is to understand how on-road crash is related to d
 # Tasks
 - Obtain crash data, road network data, elevation data and weather data and compile them together.
 - Investigate necessary packages to perform modeling and visualization tasks.
-- Apply statistical model package to the data to develop crash prediction models and crash serverity models.
+- Apply statistical model package to the data to develop crash prediction models.
 - Interpret the results with interactive plots and tables.
 - Identify the crash hotspots through methods from literature research.
 - Provide a tool to help people analyze different aspects of crash data.
@@ -28,23 +28,15 @@ The objective of the research is to understand how on-road crash is related to d
 - User interface to show results of modeling
 - Control logic
 
-## Use Case 3: Develop a crash severity model (i.e., a multinomial logit regression model) based upon a given data frame.
-- Data frame with crash severity (dependent variable) and one or more independent variables
-- Statistical modeling package to develop model (logit model)
-- User interface to show results of modeling
-- Control logic
-
-## Use Case 4: Predict the crash frequency at a new site.
+## Use Case 3: Predict the crash frequency at a new site.
 - Prediction model developed from a previous use case
 - Values of the independent variables to be used in the prediction
 - User interface to output the results of the prediction
 - Control logic
 
-## Use Case 5: Determine the hotspot rating of a list of sites.
+## Use Case 4: Determine the hotspot rating of a list of sites.
 - Data frame with list of sites, their characteristics, and crash counts
 - Procedure to determine hotspot ranking based on literature search
 - User interface to display results
 - Package to export ranking list to file
 - Control logic
-
-**NOTE:** This is a preliminary list of use cases that will likely be updated and modified as the project progresses.
