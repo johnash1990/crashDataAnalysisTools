@@ -2,17 +2,39 @@ import os
 import pandas as pd
 import sqlite3 as dbi
 
+import seaborn
 import matplotlib.pyplot as plt
 
 from ipywidgets import interact
 
-import seaborn
+# set the plot theme based on seaborn default parameters
 seaborn.set()
 
 
 def set_directory():
     # set the current work directory to the data folder
     os.chdir('../data/')
+
+
+def get_tables(conn):
+    '''
+    Parameters:
+    @conn {sqlite3 Connection} connection to the studied database
+    Return:
+    @table_list {pd dataframe} a dataframe that summarizes names of the tables
+    in the database
+    Get a list of table names included in the database. Names of the tables are
+    stored in one column in the returned dataframe.
+    '''
+    # get the table name list from a SQL query in the database connection
+    table_list = pd.read_sql('''
+                             SELECT name FROM sqlite_master
+                             WHERE type = "table"
+                             ''',
+                             con=conn)
+
+    # return the dataframe
+    return table_list
 
 
 def get_annual_data(year, conn):
@@ -170,11 +192,7 @@ def merge_annual_data(conn):
     '''
 
     # get a list of tables in the database
-    table_list = pd.read_sql('''
-                             SELECT name FROM sqlite_master
-                             WHERE type = "table"
-                             ''',
-                             con=conn)
+    table_list = get_tables(conn)
 
     # check if the annual data table already exist in the dataframe
     # if not, call the get_annual_data() function to create the annual data
@@ -305,11 +323,7 @@ def get_data():
     conn = dbi.connect('crash_database')
 
     # get a list of tables in the database
-    table_list = pd.read_sql('''
-                             SELECT name FROM sqlite_master
-                             WHERE type = "table"
-                             ''',
-                             con=conn)
+    table_list = get_tables(conn)
 
     # if the crash data table does not exist in the database, call the
     # merge_annual_data() function to create the crash dataset
@@ -326,22 +340,54 @@ def get_data():
     return crash_data
 
 
-def plot_scatter(x='avg_aadt', y='tot_acc_ct'):
+def plot_scatter(x='Average AADT', y='Total Accident Count'):
     """
     Parameters:
-    @x {string} column name for attribute x
-    @y {string} column name for attribute y
+    @x {string} the variable to be shown on x axis
+    @y {string} the variable to be shown on y axis
     Draw the scatter plot of two columns in the crash dataset.
     """
+
+    # two lists of variables from which users selected to be shown on x/y axis
+    x_data = ['Speed Limit', 'Lane Width', 'No. of Lanes',
+              'Left Shoulder Width', 'Right Shoulder Width', 'Median Width',
+              'Segment Length', 'Average Grade', 'Maximum Grade',
+              'Minimum Grade', 'Curvature Count', 'Maximum Curvature Degree',
+              'AADT 2006', 'AADT 2007', 'AADT 2008', 'AADT 2009',
+              'AADT 2010', 'AADT 2011', 'Average AADT']
+
+    y_data = ['Accident Count 2006', 'Accident Count 2007',
+              'Accident Count 2008', 'Accident Count 2009',
+              'Accident Count 2010', 'Accident Count 2011',
+              'Total Accident Count']
+
+    # two lists of corresponding column names in the crash dataset
+    x_columns = ['spd_limt', 'lanewid', 'no_lanes', 'lshldwid', 'rshldwid',
+                 'medwid', 'seg_lng', 'avg_grad', 'max_grad', 'min_grad',
+                 'curv_count', 'max_deg_curv', 'aadt_06', 'aadt_07',
+                 'aadt_08', 'aadt_09', 'aadt_10', 'aadt_11', 'avg_aadt']
+
+    y_columns = ['acc_ct_06', 'acc_ct_07', 'acc_ct_08', 'acc_ct_09',
+                 'acc_ct_10', 'acc_ct_11', 'tot_acc_ct']
+
+    # find the selected x/y column names
+    x_col = x_columns[x_data.index(x)]
+    y_col = y_columns[y_data.index(y)]
 
     # get the dataset table as a pandas dataframe
     crash_data = get_data()
 
     # draw the scatter plot
+    fig = plt.figure()
     plt.clf()
-    plt.scatter(crash_data[x], crash_data[y])
+    plt.scatter(crash_data[x_col], crash_data[y_col])
     plt.xlabel(x)
     plt.ylabel(y)
+    plt.ylim(ymin=0)
+    plt.title('Road Segment Crash Summary')
+
+    # return the plot
+    return fig
 
 
 def plot_x_vs_y():
@@ -351,15 +397,19 @@ def plot_x_vs_y():
     to select the two columns shown in the scatter plot.
     '''
 
-    # define two lists of column names from which users can define the data
+    # define two lists of variables from which users can define the data
     # shown on x/y axis of the scatter plot
-    x_columns = ['spd_limt', 'lanewid', 'no_lanes', 'lshldwid', 'rshldwid',
-                 'medwid', 'seg_lng', 'avg_grad', 'max_grad', 'min_grad',
-                 'curv_count', 'max_deg_curv', 'aadt_06', 'aadt_07',
-                 'aadt_08', 'aadt_09', 'aadt_10', 'aadt_11', 'avg_aadt']
+    x_data = ['Speed Limit', 'Lane Width', 'No. of Lanes',
+              'Left Shoulder Width', 'Right Shoulder Width', 'Median Width',
+              'Segment Length', 'Average Grade', 'Maximum Grade',
+              'Minimum Grade', 'Curvature Count', 'Maximum Curvature Degree',
+              'AADT 2006', 'AADT 2007', 'AADT 2008', 'AADT 2009',
+              'AADT 2010', 'AADT 2011', 'Average AADT']
 
-    y_columns = ['acc_ct_06', 'acc_ct_07', 'acc_ct_08', 'acc_ct_09',
-                 'acc_ct_10', 'acc_ct_11', 'tot_acc_ct']
+    y_data = ['Accident Count 2006', 'Accident Count 2007',
+              'Accident Count 2008', 'Accident Count 2009',
+              'Accident Count 2010', 'Accident Count 2011',
+              'Total Accident Count']
 
     # interactive scatter plot function
-    interact(plot_scatter, x=x_columns, y=y_columns)
+    interact(plot_scatter, x=x_data, y=y_data)
